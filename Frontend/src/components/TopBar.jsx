@@ -1,5 +1,7 @@
 import React, { useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { SelectionContext } from '../context/SelectionContext';
+import logo from '../assets/icon/Logo.jpg';
 
 export default function TopBar() {
   const { selectedItems, sentence, addAudio, addImage } = useContext(SelectionContext);
@@ -7,11 +9,19 @@ export default function TopBar() {
   return (
     <div className="top-bar bg-white shadow-lg rounded-b-2xl p-4">
       <div className="mx-auto">
-        {/* Menu Button */}
-        <div className="flex justify-end mb-3">
+        <div className="flex justify-between items-center mb-3">
+          <Link to="/" title="الرئيسية" className="transition-all duration-300 transform hover:scale-110 active:scale-95">
+            <div className="h-14 w-14 rounded-full p-1 bg-[#FDF8F2] shadow-inner">
+              <img
+                src={logo}
+                alt="Logo"
+                className="h-full w-full object-cover rounded-full"
+              />
+            </div>
+          </Link>
           <button
             onClick={addAudio}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center font-bold transition-all duration-300 transform hover:scale-110"
+            className="bg-[#7C5CBF] hover:bg-opacity-90 text-white rounded-full p-2 w-10 h-10 flex items-center justify-center font-bold transition-all duration-300 transform hover:scale-110"
             title="خيارات إضافية"
           >
             ⋮
@@ -25,7 +35,7 @@ export default function TopBar() {
               selectedItems.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex-shrink-0 w-20 h-20 rounded-xl shadow-md overflow-hidden border-2 border-purple-300 hover:border-purple-500 transition-all"
+                  className="flex-shrink-0 w-20 h-20 rounded-xl shadow-md overflow-hidden border-2 border-[#7C5CBF]/30 hover:border-[#7C5CBF] transition-all"
                 >
                   <img
                     src={item.src}
@@ -43,7 +53,7 @@ export default function TopBar() {
         </div>
 
         {/* Sentence Display */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border-2 border-blue-200 min-h-16 flex items-center justify-center">
+        <div className="bg-[#FDF8F2] rounded-xl p-4 border-2 border-[#7C5CBF]/20 min-h-16 flex items-center justify-center">
           <p className="text-center text-lg font-semibold text-gray-800 text-rtl">
             {sentence || 'ابدأ باختيار الصور...'}
           </p>

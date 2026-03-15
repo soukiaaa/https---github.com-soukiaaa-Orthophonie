@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import themes from '../data/themes';
 import { SelectionContext } from '../context/SelectionContext';
@@ -68,14 +68,23 @@ export default function SubcategoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 pt-6 pb-32 px-4" dir="rtl" lang="ar">
+    <div className="min-h-screen bg-[#FDF8F2] pt-6 pb-32 px-4" dir="rtl" lang="ar">
       <div className="w-full max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            {theme.name}
-          </h2>
-          <p className="text-gray-600">اختر العنصر الذي تريده</p>
+        <div className="flex items-center justify-center relative mb-12">
+          <div className="text-center">
+            <h2 className="text-4xl font-bold mb-2 text-[#7C5CBF]">
+              {theme.name}
+            </h2>
+            <p className="text-gray-600">اختر العنصر الذي تريده</p>
+          </div>
+          <Link
+            to="/"
+            className="absolute top-1/2 -translate-y-1/2 left-0 text-5xl font-light text-gray-400 hover:text-[#7C5CBF] transition-all duration-300 transform hover:scale-125 active:scale-95"
+            title="إغلاق"
+          >
+            &times;
+          </Link>
         </div>
 
         {/* Grid */}
@@ -88,11 +97,11 @@ export default function SubcategoryPage() {
                 animation: `scaleIn 0.4s ease-out ${idx * 80}ms forwards`,
                 opacity: 0,
               }}
-              className="group flex flex-col items-center bg-white rounded-2xl p-4 hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-3 cursor-pointer border-2 border-transparent hover:border-purple-300 active:scale-95"
+              className="group flex flex-col items-center bg-white rounded-2xl p-4 hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-3 cursor-pointer border-2 border-transparent hover:border-[#7C5CBF] active:scale-95"
             >
               {/* Image */}
               <div className="relative w-24 h-24 mb-3 overflow-hidden rounded-xl">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-purple-300 blur-lg opacity-0 group-hover:opacity-40 transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-[#7C5CBF]/20 to-[#7C5CBF]/5 blur-lg opacity-0 group-hover:opacity-40 transition-all duration-300"></div>
                 <img
                   src={sub.image}
                   alt={sub.name}
@@ -102,7 +111,7 @@ export default function SubcategoryPage() {
 
               {/* Name + Voice */}
               <div className="flex items-center justify-between w-full">
-                <span className="text-sm font-bold text-gray-800 text-center group-hover:text-purple-600 transition-colors duration-300">
+                <span className="text-sm font-bold text-gray-800 text-center group-hover:text-[#7C5CBF] transition-colors duration-300">
                   {sub.name}
                 </span>
                 <button
@@ -110,7 +119,7 @@ export default function SubcategoryPage() {
       e.stopPropagation();
       speak(sub.name); // déclenche la voix
     }}
-    className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
+    className="p-1 text-[#7C5CBF] hover:text-opacity-80 transition-colors"
     title="استمع"
   >
     🔊

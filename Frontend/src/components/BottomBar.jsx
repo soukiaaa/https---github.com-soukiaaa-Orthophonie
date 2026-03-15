@@ -20,7 +20,7 @@ export default function BottomBar() {
         {/* Home Button - Center */}
         <Link
           to="/"
-          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
+          className="bg-[#7C5CBF] hover:bg-opacity-90 text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
           title="الرئيسية"
         >
           🏠

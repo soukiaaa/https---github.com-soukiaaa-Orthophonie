@@ -3,9 +3,9 @@ import ThemeCard from './ThemeCard';
 
 export default function ThemeGrid({ themes }) {
   return (
-    <div align="center" className="min-h-screen bg-gradient-to-b from-purple-50 to-blue-50 px-4 pb-32">
+    <div align="center" className="min-h-screen bg-[#FDF8F2] px-4 pb-32">
       <div className="max-w-6xl mx-auto pt-10 w-full py-6">
-        <h1 className="text-center text-4xl font-bold mb-2 min-h-16 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <h1 className="text-center text-4xl font-bold mb-2 min-h-16 text-[#7C5CBF]">
           المواضيع المتاحة
         </h1>
 
@@ -14,7 +14,7 @@ export default function ThemeGrid({ themes }) {
         </p>
 
         {/* Important: force full width */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        <div className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-6">
           {themes.map((theme, idx) => (
             <div
               key={theme.id}
