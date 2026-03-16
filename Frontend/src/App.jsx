@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import './i18n';
 import './App.css';
 import { useTranslation } from 'react-i18next';
@@ -8,12 +8,16 @@ import { SelectionProvider } from './context/SelectionContext';
 import TopBar from './components/TopBar';
 import BottomBar from './components/BottomBar';
 import { useState, useEffect } from 'react';// ✅ Import du JSON local
-import localThemes from './data/themes.js';
+import localThemes from './data/themes';
+import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
 
-function App() {
+const AppContent = () => {
+  const location = useLocation();
   const { t } = useTranslation();
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const showBars = location.pathname !== '/login' && location.pathname !== '/signup';
 
   
 useEffect(() => {
@@ -32,16 +36,24 @@ useEffect(() => {
   }
 
   return (
+    <div className="min-h-screen w-full" dir="rtl" lang="ar">
+      {showBars && <TopBar />}
+      <Routes>
+        <Route path="/" element={<ThemeGrid themes={themes} />} />
+        <Route path="/theme/:id" element={<SubcategoryPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+      </Routes>
+      {showBars && <BottomBar />}
+    </div>
+  );
+};
+
+function App() {
+  return (
     <SelectionProvider>
       <BrowserRouter>
-        <div className="min-h-screen w-full" dir="rtl" lang="ar">
-          <TopBar />
-          <Routes>
-            <Route path="/" element={<ThemeGrid themes={themes} />} />
-            <Route path="/theme/:id" element={<SubcategoryPage />} />
-          </Routes>
-          <BottomBar />
-        </div>
+        <AppContent />
       </BrowserRouter>
     </SelectionProvider>
   );
