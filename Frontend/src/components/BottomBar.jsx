@@ -6,7 +6,9 @@ export default function BottomBar() {
   const { clearSelection, speakSentence } = useContext(SelectionContext);
 
   return (
-    <div className="bottom-bar fixed bottom-0 left-0 right-0 bg-white shadow-2xl rounded-t-3xl p-4">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2
+      shadow-2xl rounded-full px-8 py-3
+      flex gap-10 items-center">
       <div className=" mx-auto flex justify-around items-center">
         {/* Trash Button */}
         <button
