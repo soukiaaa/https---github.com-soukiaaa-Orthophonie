@@ -14,7 +14,7 @@ export default function ThemeGrid({ themes }) {
         </p>
 
         {/* Important: force full width */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+        <div className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-6">
           {themes.map((theme, idx) => (
             <div
               key={theme.id}

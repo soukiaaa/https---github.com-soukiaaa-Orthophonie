@@ -128,4 +128,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    # Allow the Vite dev server when accessed via the machine's LAN IP
+    "http://10.0.24.23:5173",
 ]

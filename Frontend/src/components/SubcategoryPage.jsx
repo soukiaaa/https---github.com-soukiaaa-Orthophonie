@@ -79,7 +79,7 @@ export default function SubcategoryPage() {
         </div>
 
         {/* Grid */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
+        <div className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-6 justify-items-center">
           {theme.subcategories.map((sub, idx) => (
             <div
               key={sub.id}

@@ -1,0 +1,10 @@
+const DEFAULT_API_BASE_URL = 'http://10.0.24.23:8000';
+
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || DEFAULT_API_BASE_URL;
+
+export const API_ROUTES = {
+  themes: `${API_BASE_URL}/api/themes/`,
+  tts: `${API_BASE_URL}/api/tts/`,
+  edgeTts: `${API_BASE_URL}/api/tts/edge/`,
+};

@@ -7,25 +7,25 @@ import SubcategoryPage from './components/SubcategoryPage';
 import { SelectionProvider } from './context/SelectionContext';
 import TopBar from './components/TopBar';
 import BottomBar from './components/BottomBar';
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';// ✅ Import du JSON local
+import localThemes from './data/themes.js';
 
 function App() {
   const { t } = useTranslation();
   const [themes, setThemes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('http://localhost:8000/api/themes/')
-      .then(response => response.json())
-      .then(data => {
-        setThemes(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching themes:', error);
-        setLoading(false);
-      });
-  }, []);
+  
+useEffect(() => {
+  fetch('http://10.0.24.23:8000/api/themes/')
+    .then(res => res.json())
+    .then(data => { setThemes(data); setLoading(false); })
+    .catch(() => {
+      console.warn("API indisponible, données locales utilisées");
+      setThemes(localThemes); // ✅ fallback sur le JSON local
+      setLoading(false);
+    });
+}, []);
 
   if (loading) {
     return <div>Loading...</div>;

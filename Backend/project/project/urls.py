@@ -21,4 +21,6 @@ from content import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/themes/', views.themes_list),
+    path('api/tts/', views.tts),
+    path('api/tts/edge/', views.tts_edge),
 ]
