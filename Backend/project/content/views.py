@@ -1,8 +1,13 @@
 from django.http import JsonResponse, HttpResponse
 import urllib.request
 import urllib.parse
-from .models import Theme
-import os
+import edge_tts, asyncio, io
+from rest_framework import generics
+from .models import User, Theme, Subcategory
+from .serializers import RegisterSerializer, LoginSerializer
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 
 def themes_list(request):
     themes = []
@@ -18,6 +23,22 @@ def themes_list(request):
         })
     return JsonResponse(themes, safe=False)
 
+def theme_detail(request, slug):
+    try:
+        theme = Theme.objects.get(slug=slug)
+        data = {
+            'id': theme.slug,
+            'name': theme.name,
+            'image': theme.image,
+            'subcategories': [
+                {'id': sub.slug, 'name': sub.name, 'image': sub.image}
+                for sub in theme.subcategories.all()
+            ]
+        }
+        return JsonResponse(data)
+    except Theme.DoesNotExist:
+        return JsonResponse({'error': 'Theme not found'}, status=404)
+
 def tts(request):
     text = request.GET.get('text', '')
     lang = request.GET.get('lang', 'ar')
@@ -32,8 +53,6 @@ def tts(request):
             return HttpResponse(audio_data, content_type='audio/mpeg')
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}', status=500)
-
-import edge_tts, asyncio, io
 
 def tts_edge(request):
     text  = request.GET.get('text', '')
@@ -53,3 +72,27 @@ def tts_edge(request):
         return HttpResponse(audio, content_type='audio/mpeg')
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}', status=500)
+
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = RegisterSerializer
+
+
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            'user': {
+                'email': user.email,
+                'first_name': user.first_name,
+            },
+            'access': str(refresh.access_token),
+            'refresh': str(refresh),
+        })

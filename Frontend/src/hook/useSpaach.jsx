@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE       = "http://10.0.24.23:8000";
 const VOICE_PRIORITY = ["ar-dz", "ar-ma", "ar-tn", "ar-eg", "ar"];
 
 export default function useSpeech() {
@@ -38,7 +38,7 @@ export default function useSpeech() {
 
   const speakWithEdge = async (text) => {
     const res = await fetch(
-      `${API_BASE}/api/tts/edge/?text=${encodeURIComponent(text)}&voice=ar-DZ-AminaNeural`
+      `${API_BASE_URL}/api/tts/edge/?text=${encodeURIComponent(text)}&voice=ar-DZ-AminaNeural`
     );
     if (!res.ok) throw new Error(`Edge TTS ${res.status}`);
     await playAudio(await res.blob());
@@ -46,7 +46,7 @@ export default function useSpeech() {
 
   const speakWithGoogle = async (text) => {
     const res = await fetch(
-      `${API_BASE}/api/tts/?text=${encodeURIComponent(text)}&lang=ar-DZ`
+      `${API_BASE_URL}/api/tts/?text=${encodeURIComponent(text)}&lang=ar-DZ`
     );
     if (!res.ok) throw new Error(`Google TTS ${res.status}`);
     await playAudio(await res.blob());
@@ -71,26 +71,37 @@ export default function useSpeech() {
   };
 
   const speak = useCallback(async (text) => {
-    if (!text?.trim()) return;
+    if (!text?.trim()) {
+      console.warn("No text provided");
+      return;
+    }
     stop();
     setIsSpeaking(true);
     try {
-      console.log("Edge TTS...");
+      console.log("🎙️ Speaking text:", text);
+      console.log("🔗 Trying Edge TTS at:", API_BASE_URL);
       await speakWithEdge(text);
-      console.log("✅ Edge TTS ok — IsmaelNeural");
+      console.log("✅ Edge TTS ok — ar-DZ-AminaNeural");
     } catch (edgeErr) {
-      console.warn("❌ Edge échoué:", edgeErr.message);
+      console.warn("❌ Edge failed:", edgeErr.message);
       try {
+        console.log("🔗 Trying Google TTS at:", API_BASE_URL);
         await speakWithGoogle(text);
         console.log("✅ Google TTS ok");
       } catch (googleErr) {
-        console.warn("❌ Google échoué:", googleErr.message);
-        await speakWithBrowser(text);
+        console.warn("❌ Google failed:", googleErr.message);
+        console.log("📱 Falling back to browser speech synthesis");
+        try {
+          await speakWithBrowser(text);
+          console.log("✅ Browser speech synthesis ok");
+        } catch (browserErr) {
+          console.error("❌ All TTS methods failed:", browserErr);
+        }
       }
     } finally {
       setIsSpeaking(false);
     }
-  }, [voices]);
+  }, [stop, voices]);
 
   return { speak, stop, isSpeaking, voices };
 }

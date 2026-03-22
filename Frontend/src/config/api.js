@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'http://10.0.24.23:8000';
+const DEFAULT_API_BASE_URL = 'http://192.168.1.7:8000';
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || DEFAULT_API_BASE_URL;

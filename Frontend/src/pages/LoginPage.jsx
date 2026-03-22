@@ -1,8 +1,35 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/images/logo.jfif';
+import { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    const response = await fetch(`${API_BASE_URL}/api/login/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // Save token and user info
+      localStorage.setItem('access', data.access);
+      localStorage.setItem('refresh', data.refresh);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      window.location.href = '/home';
+    } else {
+      alert(data.detail);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-100 via-blue-50 to-blue-100 p-4">
       <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-10 text-center relative overflow-hidden">
@@ -26,10 +53,13 @@ export default function LoginPage() {
           </p>
 
           {/* FORM */}
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <input
                 type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="البريد الإلكتروني"
                 className="w-full px-6 py-4 text-lg rounded-2xl bg-gray-100 border-2 border-gray-200 focus:border-purple-400 focus:bg-white focus:ring-0 transition duration-300 text-right shadow-sm"
                 dir="rtl"
@@ -38,6 +68,9 @@ export default function LoginPage() {
             <div>
               <input
                 type="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="كلمة المرور"
                 className="w-full px-6 py-4 text-lg rounded-2xl bg-gray-100 border-2 border-gray-200 focus:border-purple-400 focus:bg-white focus:ring-0 transition duration-300 text-right shadow-sm"
                 dir="rtl"

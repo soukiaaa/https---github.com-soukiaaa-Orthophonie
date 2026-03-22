@@ -11,20 +11,7 @@ export default function SubcategoryPage(props) {
   const { addItem, setSentence } = useContext(SelectionContext);
   const { t } = useTranslation();
 
-  // Stocke les voix disponibles
-  const [voices, setVoices] = useState([]);
-
-  const { speak } = useSpeech();
-
-  useEffect(() => {
-    const loadVoices = () => {
-      const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
-    };
-
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
-  }, []);
+  const { speak, isSpeaking } = useSpeech();
 
   if (!theme) {
     return (
@@ -42,29 +29,7 @@ export default function SubcategoryPage(props) {
   };
 
   const handleSpeak = (text) => {
-    if (!('speechSynthesis' in window)) {
-      console.warn("Speech synthesis not supported");
-      return;
-    }
-
-    const speak = () => {
-      const utter = new SpeechSynthesisUtterance(text);
-      const arVoice = voices.find((v) => v.lang.toLowerCase().startsWith('ar'));
-      if (arVoice) {
-        utter.voice = arVoice;
-        utter.lang = arVoice.lang;
-      } else {
-        utter.lang = 'ar-SA';
-      }
-      utter.rate = 0.9;
-      window.speechSynthesis.speak(utter);
-    };
-
-    if (voices.length === 0) {
-      window.speechSynthesis.onvoiceschanged = speak;
-    } else {
-      speak();
-    }
+    speak(text);
   };
 
   return (
@@ -106,15 +71,16 @@ export default function SubcategoryPage(props) {
                   {sub.name}
                 </span>
                 <button
-    onClick={(e) => {
-      e.stopPropagation();
-      speak(sub.name); // déclenche la voix
-    }}
-    className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
-    title="استمع"
-  >
-    🔊
-  </button>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSpeak(sub.name);
+                  }}
+                  disabled={isSpeaking}
+                  className="p-1 text-blue-500 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                  title="استمع"
+                >
+                  🔊
+                </button>
               </div>
             </div>
           ))}
