@@ -27,6 +27,10 @@ class Command(BaseCommand):
             for sub in theme_data.get('subcategories',[]):
                 Subcategory.objects.update_or_create(
                     theme=theme, slug=sub['id'],
-                    defaults={'name': sub['name'], 'image': sub.get('image','')}
+                    defaults={
+                        'name': sub['name'],
+                        'image': sub.get('image',''),
+                        'video': sub.get('video','')
+                    }
                 )
         self.stdout.write(self.style.SUCCESS('Themes loaded'))

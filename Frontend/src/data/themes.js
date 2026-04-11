@@ -119,8 +119,20 @@ const themes = [
       { id: 'football', name: 'كرة القدم', image: '/src/assets/images/pets.jfif' },
       { id: 'swimming', name: 'السباحة', image: '/src/assets/images/pets.jfif' },
       { id: 'running', name: 'الجري', image: '/src/assets/images/pets.jfif' },
-    ],
-  },
+    ],  },
+  {
+    id: 'actions',
+    name: 'الأفعال',
+    image: '/src/assets/images/sport.jfif',
+    subcategories: [
+      { id: 'jump', name: 'يقفز', image: '/src/assets/images/sport.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+      { id: 'run', name: 'يجري', image: '/src/assets/images/sport.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+      { id: 'eat', name: 'يأكل', image: '/src/assets/images/meals.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+      { id: 'dance', name: 'يرقص', image: '/src/assets/images/school.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+      { id: 'sleep', name: 'ينام', image: '/src/assets/images/body.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+      { id: 'play', name: 'يلعب', image: '/src/assets/images/sport.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+      { id: 'read', name: 'يقرأ', image: '/src/assets/images/school.jfif', video: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4' },
+    ],  },
 ];
 
 export default themes;

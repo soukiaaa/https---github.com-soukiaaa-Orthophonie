@@ -59,6 +59,37 @@ body {
   }
 }
 
+@keyframes actionFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes actionPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.action-card {
+  animation: actionFloat 3.2s ease-in-out infinite;
+}
+
+.action-card:hover {
+  animation: none;
+  transform: translateY(-10px) scale(1.03);
+}
+
+.action-image img {
+  animation: actionPulse 2.5s ease-in-out infinite;
+}
+
 .top-bar {
   animation: slideInDown 0.5s ease-out;
 }

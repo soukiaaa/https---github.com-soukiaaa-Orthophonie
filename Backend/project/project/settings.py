@@ -111,6 +111,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
@@ -121,4 +123,5 @@ CORS_ALLOWED_ORIGINS = [
     # Allow the Vite dev server when accessed via the machine's LAN IP
     "http://10.0.24.23:5173",
     "http://192.168.1.7:5173",
+    "http://192.168.1.86:5173",
 ]

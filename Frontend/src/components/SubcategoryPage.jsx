@@ -86,6 +86,8 @@ export default function SubcategoryPage() {
     }
   };
 
+  const isActions = themeId === 'actions';
+
   const handleClick = (sub) => {
     addItem({ src: sub.image, alt: sub.name });
     setSentence((prev) => (prev ? prev + ' ' : '') + sub.name);
@@ -124,7 +126,7 @@ export default function SubcategoryPage() {
                 animation: `scaleIn 0.4s ease-out ${idx * 80}ms forwards`,
                 opacity: 0,
               }}
-              className="group flex flex-col items-center bg-white rounded-2xl p-4 hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-3 cursor-pointer border-2 border-transparent hover:border-purple-300 active:scale-95"
+              className={`group flex flex-col items-center bg-white rounded-2xl p-4 hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-3 cursor-pointer border-2 border-transparent hover:border-purple-300 active:scale-95 ${isActions ? 'action-card' : ''}`}
             >
               {/* Delete Button for Custom Items */}
               {sub.isCustom && (
@@ -138,13 +140,24 @@ export default function SubcategoryPage() {
               )}
 
               {/* Image */}
-              <div className="relative w-24 h-24 mb-3 overflow-hidden rounded-xl">
+              <div className={`relative w-24 h-24 mb-3 overflow-hidden rounded-xl ${isActions ? 'action-image' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-purple-300 blur-lg opacity-0 group-hover:opacity-40 transition-all duration-300"></div>
-                <img
-                  src={sub.image}
-                  alt={sub.name}
-                  className="relative w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
+                {isActions && sub.video ? (
+                  <video
+                    src={sub.video}
+                    className="relative w-full h-full object-cover"
+                    muted
+                    autoPlay
+                    loop
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={sub.image}
+                    alt={sub.name}
+                    className="relative w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                )}
               </div>
 
               {/* Name + Voice */}

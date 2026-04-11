@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractUser
 class Theme(models.Model):
     slug = models.SlugField(unique=True)
     name = models.CharField(max_length=200)
-    image = models.URLField(blank=True)
+    image = models.ImageField(blank=True, upload_to='themes/')
 
     def __str__(self):
         return self.name
@@ -13,7 +13,8 @@ class Subcategory(models.Model):
     theme = models.ForeignKey(Theme, related_name='subcategories', on_delete=models.CASCADE)
     slug = models.SlugField()
     name = models.CharField(max_length=200)
-    image = models.URLField(blank=True)
+    image = models.ImageField(blank=True, upload_to='subcategories/')
+    video = models.FileField(blank=True, upload_to='subcategories/videos/')
 
     class Meta:
         unique_together = ('theme', 'slug')

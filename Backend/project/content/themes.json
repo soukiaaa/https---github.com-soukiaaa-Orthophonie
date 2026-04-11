@@ -118,5 +118,19 @@
       { "id": "swimming", "name": "السباحة", "image": "/src/assets/images/pets.jfif" },
       { "id": "running", "name": "الجري", "image": "/src/assets/images/pets.jfif" }
     ]
+  },
+  {
+    "id": "actions",
+    "name": "الأفعال",
+    "image": "/src/assets/images/sport.jfif",
+    "subcategories": [
+      { "id": "jump", "name": "يقفز", "image": "/src/assets/images/sport.jfif" },
+      { "id": "run", "name": "يجري", "image": "/src/assets/images/sport.jfif" },
+      { "id": "eat", "name": "يأكل", "image": "/src/assets/images/meals.jfif" },
+      { "id": "dance", "name": "يرقص", "image": "/src/assets/images/school.jfif" },
+      { "id": "sleep", "name": "ينام", "image": "/src/assets/images/body.jfif" },
+      { "id": "play", "name": "يلعب", "image": "/src/assets/images/sport.jfif" },
+      { "id": "read", "name": "يقرأ", "image": "/src/assets/images/school.jfif" }
+    ]
   }
 ]
