@@ -1,1 +1,3 @@
-export const API_BASE_URL = "http://192.168.1.7:8000";
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || "http://10.0.24.23:8000";
+// http://127.0.0.1:8000
+// https://elamal-orthophonie.com.ilm-edu.com

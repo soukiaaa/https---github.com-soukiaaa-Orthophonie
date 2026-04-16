@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SelectionContext } from '../context/SelectionContext';
 import { API_BASE_URL } from '../config';
 import useSpeech from '../hook/useSpaach';
-import { FaPlus, FaTimes, FaImage, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaImage, FaTrash, FaMicrophone, FaUpload, FaVideo } from 'react-icons/fa';
 
 export default function SubcategoryPage() {
   const { t } = useTranslation();
@@ -19,6 +19,12 @@ export default function SubcategoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newSubName, setNewSubName] = useState('');
   const [newSubImage, setNewSubImage] = useState('');
+  const [newSubVideo, setNewSubVideo] = useState('');
+  const [newSubVoice, setNewSubVoice] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
+  const [recordingTime, setRecordingTime] = useState(0);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -40,27 +46,95 @@ export default function SubcategoryPage() {
       .catch(err => console.error(err));
   }, [themeId]);
 
-  const handleAddSubcategory = () => {
+  const handleAddSubcategory = async () => {
     if (!newSubName || !newSubImage) return;
 
-    const newSub = {
-      id: Date.now(),
-      name: newSubName,
-      image: newSubImage,
-      isCustom: true
-    };
+    try {
+      // Prepare FormData for multipart upload
+      const formData = new FormData();
+      formData.append('name', newSubName);
 
-    if (user && user.id) {
-      const localKey = `custom_subs_${user.id}_${themeId}`;
-      const currentLocal = JSON.parse(localStorage.getItem(localKey) || '[]');
-      const updatedLocal = [...currentLocal, newSub];
-      localStorage.setItem(localKey, JSON.stringify(updatedLocal));
+      // Convert base64 image to blob
+      if (newSubImage.startsWith('data:')) {
+        const [header, data] = newSubImage.split(',');
+        const mime = header.match(/:(.*?);/)[1];
+        const bstr = atob(data);
+        const n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          u8arr[i] = bstr.charCodeAt(i);
+        }
+        const imageBlob = new Blob([u8arr], { type: mime });
+        formData.append('image', imageBlob, 'image.jpg');
+      }
+
+      // Convert base64 voice to blob if provided
+      if (newSubVoice && newSubVoice.startsWith('data:')) {
+        const [header, data] = newSubVoice.split(',');
+        const mime = header.match(/:(.*?);/)[1];
+        const bstr = atob(data);
+        const n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          u8arr[i] = bstr.charCodeAt(i);
+        }
+        const voiceBlob = new Blob([u8arr], { type: mime });
+        formData.append('voice', voiceBlob, 'voice.mp3');
+      }
+
+      // Convert base64 video to blob if provided
+      if (newSubVideo && newSubVideo.startsWith('data:')) {
+        const [header, data] = newSubVideo.split(',');
+        const mime = header.match(/:(.*?);/)[1];
+        const bstr = atob(data);
+        const n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          u8arr[i] = bstr.charCodeAt(i);
+        }
+        const videoBlob = new Blob([u8arr], { type: mime });
+        formData.append('video', videoBlob, 'video.mp4');
+      }
+
+      // Send to backend
+      const response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/subcategories/`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create subcategory');
+      }
+
+      const newSub = await response.json();
+      
+      // Also keep in localStorage as backup
+      const newSubLocal = {
+        id: newSub.id || Date.now(),
+        name: newSub.name,
+        image: newSub.image,
+        video: newSub.video,
+        voice: newSub.voice,
+        isCustom: true
+      };
+
+      if (user && user.id) {
+        const localKey = `custom_subs_${user.id}_${themeId}`;
+        const currentLocal = JSON.parse(localStorage.getItem(localKey) || '[]');
+        const updatedLocal = [...currentLocal, newSubLocal];
+        localStorage.setItem(localKey, JSON.stringify(updatedLocal));
+      }
+
+      setSubcategories([...subcategories, newSubLocal]);
+      setIsModalOpen(false);
+      setNewSubName('');
+      setNewSubImage('');
+      setNewSubVideo('');
+      setNewSubVoice('');
+    } catch (error) {
+      console.error('Error creating subcategory:', error);
+      alert('حدث خطأ أثناء إضافة العنصر');
     }
-
-    setSubcategories([...subcategories, newSub]);
-    setIsModalOpen(false);
-    setNewSubName('');
-    setNewSubImage('');
   };
 
   const handleImageUpload = (e) => {
@@ -73,6 +147,139 @@ export default function SubcategoryPage() {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleVoiceUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewSubVoice(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewSubVideo(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleStartRecording = async () => {
+    try {
+      // Check if browser supports mediaDevices with proper fallback
+      let mediaDevices = navigator.mediaDevices;
+      
+      // Fallback for older browsers
+      if (!mediaDevices) {
+        const getUserMedia = navigator.getUserMedia || 
+                             navigator.webkitGetUserMedia || 
+                             navigator.mozGetUserMedia || 
+                             navigator.msGetUserMedia;
+        
+        if (!getUserMedia) {
+          alert('متصفحك لا يدعم تسجيل الصوت. يرجى استخدام متصفح حديث مثل Chrome أو Firefox أو Edge.');
+          return;
+        }
+        
+        // Use legacy API
+        mediaDevices = {
+          getUserMedia: (constraints) => {
+            return new Promise((resolve, reject) => {
+              getUserMedia.call(navigator, constraints, resolve, reject);
+            });
+          }
+        };
+      }
+
+      // Check if we're in a secure context (HTTPS or localhost)
+      if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        alert('تسجيل الصوت يتطلب اتصالاً آمناً (HTTPS). الرجاء استخدام HTTPS للوصول إلى الموقع.');
+        return;
+      }
+
+      const stream = await mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(chunks, { type: 'audio/webm;codecs=opus' });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setNewSubVoice(reader.result);
+          setRecordingTime(0);
+        };
+        reader.readAsDataURL(audioBlob);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      setMediaRecorder(recorder);
+      setAudioChunks(chunks);
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        alert('تم رفض إذن الوصول إلى الميكروفون. يرجى السماح بالوصول إلى الميكروفون والمحاولة مرة أخرى.');
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        alert('لم يتم العثور على ميكروفون. يرجى التحقق من أن الميكروفون متصل ومفعل.');
+      } else if (error.name === 'NotSupportedError') {
+        alert('متصفحك لا يدعم تسجيل الصوت بهذه الطريقة. يرجى استخدام Chrome أو Firefox.');
+      } else if (error.name === 'TypeError') {
+        alert('تعذر الوصول إلى الميكروفون. تأكد من أن المتصفح يدعم هذه العملية على HTTPS.');
+      } else {
+        alert('حدث خطأ أثناء الوصول إلى الميكروفون: ' + error.message);
+      }
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const handleDiscardRecording = () => {
+    setNewSubVoice('');
+    setRecordingTime(0);
+  };
+
+  const resolveMediaUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('data:')) return url;
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('/')) return `${API_BASE_URL}${url}`;
+    return `${API_BASE_URL}/${url}`;
+  };
+
+  const handlePlayRecordedAudio = () => {
+    if (newSubVoice) {
+      const audio = new Audio(resolveMediaUrl(newSubVoice));
+      audio.play();
+    }
+  };
+
+  // Timer for recording
+  useEffect(() => {
+    let interval;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
 
   const handleDeleteCustom = (e, subId) => {
     e.stopPropagation();
@@ -89,7 +296,7 @@ export default function SubcategoryPage() {
   const isActions = themeId === 'actions';
 
   const handleClick = (sub) => {
-    addItem({ src: sub.image, alt: sub.name });
+    addItem({ src: sub.image, alt: sub.name, voice: resolveMediaUrl(sub.voice) });
     setSentence((prev) => (prev ? prev + ' ' : '') + sub.name);
   };
 
@@ -144,7 +351,7 @@ export default function SubcategoryPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-purple-300 blur-lg opacity-0 group-hover:opacity-40 transition-all duration-300"></div>
                 {isActions && sub.video ? (
                   <video
-                    src={sub.video}
+                    src={resolveMediaUrl(sub.video)}
                     className="relative w-full h-full object-cover"
                     muted
                     autoPlay
@@ -168,7 +375,12 @@ export default function SubcategoryPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    speak(sub.name);
+                    if (sub.voice) {
+                      const audio = new Audio(resolveMediaUrl(sub.voice));
+                      audio.play();
+                    } else {
+                      speak(sub.name);
+                    }
                   }}
                   disabled={isSpeaking}
                   className="p-1 text-blue-500 hover:text-blue-700 disabled:opacity-50 transition-colors"
@@ -209,6 +421,23 @@ export default function SubcategoryPage() {
                 </label>
               </div>
 
+              {/* Video Input (only for actions theme) */}
+              {isActions && (
+                <div className="flex justify-center">
+                  <label className="relative cursor-pointer w-40 h-40 border-4 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center hover:border-red-500 hover:bg-red-50 transition-all overflow-hidden group">
+                    {newSubVideo ? (
+                      <video src={newSubVideo} className="w-full h-full object-cover" controls />
+                    ) : (
+                      <>
+                        <FaVideo size={40} className="text-gray-400 group-hover:text-red-500 mb-2" />
+                        <span className="text-gray-500 text-sm font-medium">اختر فيديو</span>
+                      </>
+                    )}
+                    <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+                  </label>
+                </div>
+              )}
+
               {/* Name Input */}
               <div>
                 <label className="block text-gray-700 font-bold mb-2 text-right">اسم العنصر</label>
@@ -219,6 +448,66 @@ export default function SubcategoryPage() {
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition-all outline-none text-right"
                   placeholder="مثلاً: تفاحة"
                 />
+              </div>
+
+              {/* Voice Input */}
+              <div>
+                <label className="block text-gray-700 font-bold mb-2 text-right">ملف الصوت (اختياري)</label>
+                <div className="space-y-3">
+                  {/* Recording Controls */}
+                  <div className="flex gap-2">
+                    {!isRecording ? (
+                      <button
+                        onClick={handleStartRecording}
+                        disabled={newSubVoice !== ''}
+                        className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                      >
+                        <FaMicrophone size={18} />
+                        تسجيل
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleStopRecording}
+                        className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 animate-pulse"
+                      >
+                        <span className="w-3 h-3 bg-red-300 rounded-full animate-pulse"></span>
+                        إيقاف ({recordingTime}s)
+                      </button>
+                    )}
+                  </div>
+
+                  {/* File Upload Fallback */}
+                  <label className="relative cursor-pointer w-full border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-green-500 hover:bg-green-50 transition-all overflow-hidden group p-3">
+                    {!newSubVoice && (
+                      <>
+                        <FaUpload size={18} className="text-gray-400 group-hover:text-green-500 mb-1" />
+                        <span className="text-gray-500 text-xs font-medium">أو رفع ملف صوت</span>
+                      </>
+                    )}
+                    <input type="file" accept="audio/*" onChange={handleVoiceUpload} className="hidden" />
+                  </label>
+
+                  {/* Recorded Audio Preview */}
+                  {newSubVoice && (
+                    <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-blue-600 font-medium">✓ تم تسجيل الصوت</span>
+                        <button
+                          onClick={handlePlayRecordedAudio}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm transition-colors"
+                        >
+                          ► استمع
+                        </button>
+                      </div>
+                      <button
+                        onClick={handleDiscardRecording}
+                        className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 rounded-lg transition-colors"
+                      >
+                        تسجيل جديد
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}

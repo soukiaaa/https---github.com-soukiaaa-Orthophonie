@@ -7,6 +7,7 @@ export default defineConfig({
     // Allows accessing the dev server from other devices on the same network.
     // Use your machine's local IP (e.g. 192.168.x.x) in a browser to connect.
     host: '0.0.0.0',
+    port: 5173,
   },
   plugins: [
     react({

@@ -15,7 +15,7 @@ DEBUG = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ['192.168.1.7', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['10.0.24.23', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -111,17 +111,48 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# STATICFILES_DIRS = [BASE_DIR.parent.parent / 'Frontend' / 'dist']
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
+    # Development - HTTP (for localhost microphone recording)
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    # Development - HTTPS (for microphone recording on other networks)
+    "https://localhost:5173",
+    "https://127.0.0.1:5173",
+    "https://localhost:5174",
+    "https://127.0.0.1:5174",
     # Allow the Vite dev server when accessed via the machine's LAN IP
     "http://10.0.24.23:5173",
+    "https://10.0.24.23:5173",
     "http://192.168.1.7:5173",
     "http://192.168.1.86:5173",
+    # Production domain
+    "https://elamal-orthophonie.com.ilm-edu.com",
+    "https://www.elamal-orthophonie.com.ilm-edu.com",
 ]
+
+# Allow credentials for CORS
+CORS_ALLOW_CREDENTIALS = True
+
+# Allow all origins for development (remove in production)
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Django REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}

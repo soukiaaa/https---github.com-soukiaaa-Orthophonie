@@ -15,6 +15,7 @@ class Subcategory(models.Model):
     name = models.CharField(max_length=200)
     image = models.ImageField(blank=True, upload_to='subcategories/')
     video = models.FileField(blank=True, upload_to='subcategories/videos/')
+    voice = models.FileField(blank=True, upload_to='subcategories/voices/')
 
     class Meta:
         unique_together = ('theme', 'slug')

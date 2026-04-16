@@ -54,12 +54,29 @@ module.exports = {
   theme: {
     extend: {
       animation: {
-        fadeIn: "fadeIn 0.5s ease-out forwards",
+        fadeIn: "fadeIn 0.4s ease-out forwards",
+        slideUp: "slideUp 0.4s ease-out forwards",
+        popUp: "popUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        shake: "shake 0.3s ease-in-out",
       },
       keyframes: {
         fadeIn: {
-          "0%": { opacity: 0, transform: "scale(0.9)" },
-          "100%": { opacity: 1, transform: "scale(1)" },
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
+        },
+        slideUp: {
+          "0%": { opacity: 0, transform: "translateY(30px)" },
+          "100%": { opacity: 1, transform: "translateY(0)" },
+        },
+        popUp: {
+          "0%": { opacity: 0, transform: "scale(0.7) translateY(20px)" },
+          "50%": { transform: "scale(1.05)" },
+          "100%": { opacity: 1, transform: "scale(1) translateY(0)" },
+        },
+        shake: {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(-8px)" },
+          "75%": { transform: "translateX(8px)" },
         },
       },
     },

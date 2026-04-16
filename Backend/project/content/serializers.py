@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Theme, Subcategory
 from django.contrib.auth import authenticate
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -19,6 +19,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        validated_data['username'] = validated_data.get('email')
         user = User(**validated_data)
         user.set_password(password)
         user.save()
@@ -34,3 +35,9 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError("Invalid credentials")
         return user
+
+
+class SubcategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subcategory
+        fields = ['name', 'image', 'video', 'voice']

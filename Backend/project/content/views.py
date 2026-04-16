@@ -7,11 +7,12 @@ from django.conf import settings
 from django.http import JsonResponse, HttpResponse
 import edge_tts, asyncio, io
 from django.utils.text import slugify
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view
 from .models import User, Theme, Subcategory
-from .serializers import RegisterSerializer, LoginSerializer
+from .serializers import RegisterSerializer, LoginSerializer, SubcategorySerializer
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
@@ -94,12 +95,17 @@ def themes_list(request):
                     'id': sub.slug,
                     'name': sub.name,
                     'image': get_media_url(request, sub.image),
-                    'video': get_media_url(request, sub.video)
+                    'video': get_media_url(request, sub.video),
+                    'voice': get_media_url(request, sub.voice)
                 }
                 for sub in theme.subcategories.all()
             ]
         })
-    return JsonResponse(themes, safe=False)
+    response = JsonResponse(themes, safe=False)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 def theme_detail(request, slug):
     try:
@@ -113,14 +119,23 @@ def theme_detail(request, slug):
                     'id': sub.slug,
                     'name': sub.name,
                     'image': get_media_url(request, sub.image),
-                    'video': get_media_url(request, sub.video)
+                    'video': get_media_url(request, sub.video),
+                    'voice': get_media_url(request, sub.voice)
                 }
                 for sub in theme.subcategories.all()
             ]
         }
-        return JsonResponse(data)
+        response = JsonResponse(data)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
     except Theme.DoesNotExist:
-        return JsonResponse({'error': 'Theme not found'}, status=404)
+        response = JsonResponse({'error': 'Theme not found'}, status=404)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
 
 def tts(request):
     text = request.GET.get('text', '')
@@ -159,10 +174,14 @@ def tts_edge(request):
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -175,7 +194,44 @@ class LoginView(generics.GenericAPIView):
             'user': {
                 'email': user.email,
                 'first_name': user.first_name,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser
             },
             'access': str(refresh.access_token),
             'refresh': str(refresh),
         })
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+
+class CreateSubcategoryView(generics.CreateAPIView):
+    queryset = Subcategory.objects.all()
+    serializer_class = SubcategorySerializer
+    permission_classes = [AllowAny]
+    authentication_classes = []  # No authentication required for this endpoint
+
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    def perform_create(self, serializer):
+        theme_slug = self.kwargs.get('theme_slug')
+        try:
+            theme = Theme.objects.get(slug=theme_slug)
+        except Theme.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound('Theme not found')
+        
+        # Generate unique slug
+        from django.utils.text import slugify
+        base_slug = slugify(serializer.validated_data.get('name', ''))
+        slug = base_slug
+        counter = 1
+        
+        while Subcategory.objects.filter(theme=theme, slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        
+        serializer.save(theme=theme, slug=slug)

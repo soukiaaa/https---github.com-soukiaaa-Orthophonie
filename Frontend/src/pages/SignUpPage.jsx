@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/logo.jfif';
 import { API_BASE_URL } from '../config';
 
 export default function SignUpPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -13,6 +14,9 @@ export default function SignUpPage() {
     email: '',
     password: '',
   });
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+
 
   const handleChange = (e) => {
     setFormData({
@@ -23,25 +27,42 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');
+    setMessageType('');
 
-    const response = await fetch(`${API_BASE_URL}/api/signup/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        gender: formData.gender,
-        age: formData.age,
-        specialist_name: formData.specialistName,
-      }),
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/signup/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          gender: formData.gender,
+          age: formData.age,
+          specialist_name: formData.specialistName,
+        }),
+      });
 
-    const data = await response.json();
-    console.log(data);
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage('تم إنشاء الحساب بنجاح! سيتم توجيهك إلى صفحة تسجيل الدخول.');
+        setMessageType('success');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } else {
+        setMessage(data.detail || 'حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.');
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('حدث خطأ في الاتصال. يرجى التحقق من الإنترنت والمحاولة مرة أخرى.');
+      setMessageType('error');
+    }
   };
 
   return (
@@ -65,6 +86,17 @@ export default function SignUpPage() {
           <p className="text-gray-500 mb-10">
             انضم إلينا لتبدأ رحلتك التعليمية.
           </p>
+
+          {/* MESSAGE */}
+          {message && (
+            <div className={`mb-6 p-4 rounded-2xl text-center font-semibold ${
+              messageType === 'success'
+                ? 'bg-green-100 text-green-800 border border-green-300'
+                : 'bg-red-100 text-red-800 border border-red-300'
+            }`}>
+              {message}
+            </div>
+          )}
 
           {/* FORM */}
           <form className="space-y-4" onSubmit={handleSubmit}>
