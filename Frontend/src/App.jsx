@@ -34,11 +34,30 @@ const AppContent = () => {
 
   const [isAddThemeOpen, setIsAddThemeOpen] = useState(false);
 
+  const getThemeUsageCounts = () => {
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem('themeUsage') || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const sortThemesByUsage = (themesList) => {
+    const usage = getThemeUsageCounts();
+    return [...themesList].sort((a, b) => {
+      const aCount = usage[a.id] || 0;
+      const bCount = usage[b.id] || 0;
+      if (aCount !== bCount) return bCount - aCount;
+      return a.name.localeCompare(b.name, 'ar', { sensitivity: 'base' });
+    });
+  };
+
   useEffect(() => {
     fetch(`${API_BASE_URL}/api/themes/`, { cache: 'no-cache' })
       .then(res => res.json())
       .then(data => {
-        setThemes(data);
+        setThemes(sortThemesByUsage(data));
         setSubcategories(data.subcategories);
         setLoading(false);
       })
@@ -48,6 +67,12 @@ const AppContent = () => {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (location.pathname === '/home' && themes.length > 0) {
+      setThemes((currentThemes) => sortThemesByUsage(currentThemes));
+    }
+  }, [location.pathname]);
 
   if (loading) {
     return (
@@ -85,17 +110,19 @@ const AppContent = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" dir="rtl" lang="ar">
       {showBars && <TopBar />}
-      <Routes>
-        <Route path="/" element={<SplashPage />} />
-        <Route path="/home" element={<ThemeGrid themes={themes} />} />
-        <Route path="/theme/:id" element={
-          <ProtectedRoute>
-            <SubcategoryPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-      </Routes>
+      <div className={showBars ? 'pb-32' : ''}>
+        <Routes>
+          <Route path="/" element={<SplashPage />} />
+          <Route path="/home" element={<ThemeGrid themes={themes} />} />
+          <Route path="/theme/:id" element={
+            <ProtectedRoute>
+              <SubcategoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+        </Routes>
+      </div>
       {showBars && (
         <>
           <BottomBar onOpenAddTheme={() => setIsAddThemeOpen(true)} />

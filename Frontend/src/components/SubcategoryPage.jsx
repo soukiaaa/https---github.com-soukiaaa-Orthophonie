@@ -4,14 +4,14 @@ import { useTranslation } from 'react-i18next';
 import { SelectionContext } from '../context/SelectionContext';
 import { API_BASE_URL } from '../config';
 import useSpeech from '../hook/useSpaach';
-import { FaPlus, FaTimes, FaImage, FaTrash, FaMicrophone, FaUpload, FaVideo } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaImage, FaTrash, FaMicrophone, FaUpload, FaVideo, FaSearchPlus, FaEdit } from 'react-icons/fa';
 
 export default function SubcategoryPage() {
   const { t } = useTranslation();
   const { speak, isSpeaking } = useSpeech();
 
   const { id: themeId } = useParams();
-  const { addItem, setSentence } = useContext(SelectionContext);
+  const { addItem } = useContext(SelectionContext);
   const [subcategories, setSubcategories] = useState([]);
   const [themeName, setThemeName] = useState('');
   
@@ -25,16 +25,23 @@ export default function SubcategoryPage() {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [audioChunks, setAudioChunks] = useState([]);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [zoomedImage, setZoomedImage] = useState(null);
+  const [editingSub, setEditingSub] = useState(null);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/themes/${themeId}/`) // fetch du thème précis
+    const token = localStorage.getItem('access');
+
+    fetch(`${API_BASE_URL}/api/themes/${themeId}/`, {
+      headers: token ? {
+        'Authorization': `Bearer ${token}`,
+      } : {}
+    })
       .then(res => res.json())
       .then(data => {
         setThemeName(data.name);
-        
-        // Merge server data with local user data
+
         let allSubs = data.subcategories || [];
         if (user && user.id) {
           const localKey = `custom_subs_${user.id}_${themeId}`;
@@ -79,7 +86,7 @@ export default function SubcategoryPage() {
           u8arr[i] = bstr.charCodeAt(i);
         }
         const voiceBlob = new Blob([u8arr], { type: mime });
-        formData.append('voice', voiceBlob, 'voice.mp3');
+        formData.append('voice', voiceBlob, 'voice.webm');
       }
 
       // Convert base64 video to blob if provided
@@ -293,11 +300,71 @@ export default function SubcategoryPage() {
     }
   };
 
+  const handleUpdateVoice = async () => {
+    if (!editingSub || !newSubVoice || !editingSub.id) return;
+
+    try {
+      const formData = new FormData();
+      // Conversion du base64 (enregistrement ou upload) en Blob
+      if (newSubVoice.startsWith('data:')) {
+        const [header, data] = newSubVoice.split(',');
+        const mime = header.match(/:(.*?);/)[1];
+        const bstr = atob(data);
+        const n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        for (let i = 0; i < n; i++) {
+          u8arr[i] = bstr.charCodeAt(i);
+        }
+        const voiceBlob = new Blob([u8arr], { type: mime });
+        formData.append('voice', voiceBlob, 'voice.webm');
+      }
+
+      let finalVoiceUrl = newSubVoice;
+
+      if (typeof editingSub.id === 'number' && editingSub.id > 1000000000000) {
+        console.log("Mise à jour locale uniquement (élément non synchronisé)");
+      } else {
+        const token = localStorage.getItem('access');
+        const response = await fetch(`${API_BASE_URL}/api/subcategories/${editingSub.id}/`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          body: formData
+        });
+
+      if (!response.ok) {
+        throw new Error('Failed to update voice');
+      }
+
+      const updatedSub = await response.json();
+        
+        finalVoiceUrl = updatedSub.voice;
+      }
+      
+      // Mise à jour de l'état local
+      setSubcategories(prev => prev.map(s => s.id === editingSub.id ? { ...s, voice: finalVoiceUrl } : s));
+
+      // Mise à jour du localStorage si c'est un élément personnalisé
+      if (editingSub.isCustom && user?.id) {
+        const localKey = `custom_subs_${user.id}_${themeId}`;
+        const currentLocal = JSON.parse(localStorage.getItem(localKey) || '[]');
+        const updatedLocal = currentLocal.map(s => s.id === editingSub.id ? { ...s, voice: finalVoiceUrl } : s);
+        localStorage.setItem(localKey, JSON.stringify(updatedLocal));
+      }
+
+      setEditingSub(null);
+      setNewSubVoice('');
+    } catch (error) {
+      console.error('Error updating subcategory:', error);
+      alert('حدث خطأ أثناء تحديث الصوت');
+    }
+  };
+
   const isActions = themeId === 'actions';
 
   const handleClick = (sub) => {
     addItem({ src: sub.image, alt: sub.name, voice: resolveMediaUrl(sub.voice) });
-    setSentence((prev) => (prev ? prev + ' ' : '') + sub.name);
   };
 
   return (
@@ -346,9 +413,26 @@ export default function SubcategoryPage() {
                 </button>
               )}
 
+              {/* Button Edit (Voice) */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setEditingSub(sub); setNewSubVoice(''); }}
+                className="absolute top-2 right-2 z-10 bg-blue-100 text-blue-500 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-200"
+                title="تعديل الصوت"
+              >
+                <FaEdit size={12} />
+              </button>
+
               {/* Image */}
               <div className={`relative w-24 h-24 mb-3 overflow-hidden rounded-xl ${isActions ? 'action-image' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-purple-300 blur-lg opacity-0 group-hover:opacity-40 transition-all duration-300"></div>
+                {/* Button Agrandir (Zoom) */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); setZoomedImage(sub); }}
+                  className="absolute bottom-1 right-1 z-10 bg-white/90 text-purple-600 p-2 rounded-lg shadow-md md:opacity-0 md:group-hover:opacity-100 transition-all active:scale-95"
+                  title="agrandir"
+                >
+                  <FaSearchPlus size={16} />
+                </button>
                 {isActions && sub.video ? (
                   <video
                     src={resolveMediaUrl(sub.video)}
@@ -518,6 +602,100 @@ export default function SubcategoryPage() {
                   className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   حفظ
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'agrandissement (Zoom) */}
+      {zoomedImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-4 backdrop-blur-sm animate-fadeIn"
+          onClick={() => setZoomedImage(null)}
+        >
+          <div className="relative max-w-full md:max-w-2xl w-full flex flex-col items-center">
+            <button 
+              className="absolute -top-12 right-0 text-white hover:text-red-400 transition-colors p-2"
+              onClick={() => setZoomedImage(null)}
+            >
+              <FaTimes size={32} />
+            </button>
+            <img 
+              src={zoomedImage.image} 
+              alt={zoomedImage.name} 
+              className="w-full h-auto max-h-[70vh] rounded-3xl shadow-2xl object-contain bg-white animate-popUp"
+            />
+            <div className="mt-6 bg-white/10 backdrop-blur-md px-6 py-2 rounded-full border border-white/20">
+              <h3 className="text-white text-2xl font-bold">{zoomedImage.name}</h3>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de modification du son (Edit Voice) */}
+      {editingSub && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 flex justify-between items-center text-white">
+              <h3 className="text-2xl font-bold">تعديل صوت: {editingSub.name}</h3>
+              <button onClick={() => { setEditingSub(null); setNewSubVoice(''); }} className="hover:bg-white/20 p-2 rounded-full transition">
+                <FaTimes size={20} />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  {!isRecording ? (
+                    <button
+                      onClick={handleStartRecording}
+                      disabled={newSubVoice !== ''}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      <FaMicrophone size={18} />
+                      تسجيل صوت جديد
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleStopRecording}
+                      className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 animate-pulse"
+                    >
+                      <span className="w-3 h-3 bg-red-300 rounded-full animate-pulse"></span>
+                      إيقاف ({recordingTime}s)
+                    </button>
+                  )}
+                </div>
+
+                <label className="relative cursor-pointer w-full border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center hover:border-green-500 hover:bg-green-50 transition-all overflow-hidden group p-3">
+                  {!newSubVoice && (
+                    <>
+                      <FaUpload size={18} className="text-gray-400 group-hover:text-green-500 mb-1" />
+                      <span className="text-gray-500 text-xs font-medium">أو رفع ملف صوت</span>
+                    </>
+                  )}
+                  <input type="file" accept="audio/*" onChange={handleVoiceUpload} className="hidden" />
+                </label>
+
+                {newSubVoice && (
+                  <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-600 font-medium">✓ تم اختيار الصوت</span>
+                      <button onClick={handlePlayRecordedAudio} className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm">► استمع</button>
+                    </div>
+                    <button onClick={handleDiscardRecording} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 rounded-lg">إلغاء</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleUpdateVoice}
+                  disabled={!newSubVoice}
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3 rounded-xl hover:shadow-lg transform hover:-translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  حفظ الصوت الجديد
                 </button>
               </div>
             </div>

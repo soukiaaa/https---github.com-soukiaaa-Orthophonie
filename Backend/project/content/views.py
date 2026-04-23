@@ -235,3 +235,33 @@ class CreateSubcategoryView(generics.CreateAPIView):
             counter += 1
         
         serializer.save(theme=theme, slug=slug)
+
+
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
+
+class SubcategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Subcategory.objects.all()
+    lookup_field = 'slug'
+    serializer_class = SubcategorySerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+
+@csrf_exempt
+def create_theme(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        slug = request.POST.get('slug')
+        image = request.FILES.get('image')
+
+        if not name:
+            return JsonResponse({'detail': 'Name is required'}, status=400)
+
+        theme = Theme.objects.create(
+            name=name,
+            slug=slugify(slug),
+            image=image
+        )
+
+        return JsonResponse({'message': 'Theme created'}, status=201)

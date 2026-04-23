@@ -5,7 +5,7 @@ import { MdClose, MdImage } from 'react-icons/md';
 export default function AddThemeModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
+    slug: '',
     image: null,
   });
   const [loading, setLoading] = useState(false);
@@ -53,12 +53,12 @@ export default function AddThemeModal({ isOpen, onClose }) {
 
       const form = new FormData();
       form.append('name', formData.name);
-      form.append('description', formData.description);
+      form.append('slug', formData.slug);
       if (formData.image) {
         form.append('image', formData.image);
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/themes/`, {
+      const response = await fetch(`${API_BASE_URL}/api/addthemes/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -82,7 +82,7 @@ export default function AddThemeModal({ isOpen, onClose }) {
       }
 
       alert('تم إضافة الموضوع بنجاح!');
-      setFormData({ name: '', description: '', image: null });
+      setFormData({ name: '', slug: '', image: null });
       setImagePreview(null);
       onClose();
       
@@ -148,21 +148,21 @@ export default function AddThemeModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Description */}
-            <div className="hidden">
+            {/* slug */}
+            <div>
               <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
                 <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                الوصف
+                slug
               </label>
               <div className="relative">
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="وصف الموضوع (اختياري)"
-                  rows="3"
-                  className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all duration-200 bg-gray-50 hover:bg-white resize-none"
-                  disabled={loading}
+                <input
+                    type="text"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleInputChange}
+                    placeholder="مثال: fruits"
+                    className="w-full pr-10 pl-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200 bg-gray-50 hover:bg-white font-semibold"
+                    disabled={loading}
                 />
               </div>
             </div>

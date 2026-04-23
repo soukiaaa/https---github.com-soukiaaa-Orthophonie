@@ -15,10 +15,7 @@ export default function SplashPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 text-white flex flex-col justify-center items-center text-center p-6 relative overflow-hidden" dir="rtl" lang="ar">
       {/* Background decorative elements */}
-      <div className="absolute top-10 left-10 w-20 h-20 bg-white bg-opacity-10 rounded-full animate-bounce"></div>
-      <div className="absolute bottom-20 right-10 w-16 h-16 bg-white bg-opacity-10 rounded-full animate-pulse"></div>
-      <div className="absolute top-1/2 left-1/4 w-12 h-12 bg-white bg-opacity-10 rounded-full animate-ping"></div>
-
+      
       <div className="z-10 max-w-lg">
         {/* Logo with enhanced styling */}
         <div className="w-full h-64 mb-6 flex items-center justify-center">
@@ -27,7 +24,7 @@ export default function SplashPage() {
 
         {/* Main title */}
         <h1 className="text-5xl font-extrabold mb-4 bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent">
-          تطبيق العلاج الوظيفي
+          مرحباً بك في تطبيق التواصل البديل
         </h1>
 
         <br />
@@ -38,7 +35,7 @@ export default function SplashPage() {
 
         {/* Description */}
         <p className="text-lg mb-8 leading-relaxed text-white text-opacity-90">
-          مرحباً بك في تطبيق العلاج الوظيفي التفاعلي! اختر المواضيع التعليمية لبناء الجمل وتطوير مهارات التواصل لدى الأطفال.
+         مرحباً بك في تطبيق الذي يمنحك الامل للتواصل
         </p>
 
         {/* Call to action buttons */}
@@ -69,7 +66,7 @@ export default function SplashPage() {
 
         {/* Footer text */}
         <p className="mt-8 text-sm text-white text-opacity-70">
-          تطوير مهارات التواصل بطريقة ممتعة وتفاعلية
+          تطبيق التواصل البديل لتحسين القدرات التواصلية
         </p>
       </div>
     </div>

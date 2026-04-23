@@ -29,7 +29,7 @@ export default function BottomBar({ onOpenAddTheme }) {
         {isAdmin && isHomePage && (
           <button
             onClick={onOpenAddTheme}
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
+            className="text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
             title="إضافة موضوع جديد"
           >
             ➕
@@ -39,7 +39,7 @@ export default function BottomBar({ onOpenAddTheme }) {
         {/* Trash Button */}
         <button
           onClick={clearSelection}
-          className="bg-red-500 hover:bg-red-600 text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
+          className="text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
           title="حذف"
         >
           🗑️
@@ -48,7 +48,7 @@ export default function BottomBar({ onOpenAddTheme }) {
         {/* Home Button - Center */}
         <Link
           to="/"
-          className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
+          className="text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
           title="الرئيسية"
         >
           🏠
@@ -57,7 +57,7 @@ export default function BottomBar({ onOpenAddTheme }) {
         {/* Speaker Button */}
         <button
           onClick={speakSentence}
-          className="bg-green-500 hover:bg-green-600 text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
+          className="text-white rounded-full p-4 w-16 h-16 flex items-center justify-center text-2xl font-bold transition-all duration-300 transform hover:scale-110 hover:shadow-lg active:scale-95"
           title="نطق"
         >
           🔊

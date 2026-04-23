@@ -6,7 +6,7 @@ import { CgArrowLeft } from "react-icons/cg";
 import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 
 export default function TopBar() {
-  const { selectedItems, sentence, recentItems, addItem, removeFromRecent } = useContext(SelectionContext);
+  const { selectedItems, sentence, addItem, removeSelectedItem } = useContext(SelectionContext);
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -106,13 +106,20 @@ export default function TopBar() {
           selectedItems.map((item, idx) => (
             <div
               key={idx}
-              className="w-20 h-20 rounded-xl overflow-hidden shadow border-2 border-purple-300"
+              className="relative w-20 h-20 rounded-xl overflow-hidden shadow border-2 border-purple-300"
             >
               <img
                 src={item.src}
                 alt={item.alt}
                 className="w-full h-full object-cover"
               />
+              <button
+                onClick={() => removeSelectedItem(idx)}
+                className="absolute -top-2 -left-2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md hover:bg-gray-100 transition-colors"
+                title="حذف العنصر"
+              >
+                ✕
+              </button>
             </div>
           ))
         ) : (
@@ -121,39 +128,6 @@ export default function TopBar() {
           </p>
         )}
       </div>
-
-      {/* Recently Chosen Items Zone */}
-      {recentItems.length > 0 && (
-        <div className="mt-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-200">
-          <p className="text-xs font-semibold text-amber-700 mb-2">الاختيارات الأخيرة</p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {recentItems.map((item, idx) => (
-              <div
-                key={idx}
-                className="relative group flex-shrink-0"
-              >
-                <img
-                  src={item.src}
-                  alt={item.alt}
-                  className="w-16 h-16 rounded-lg overflow-hidden shadow border border-amber-300 object-cover cursor-pointer hover:scale-105 transition-transform"
-                  onClick={() => addItem(item)}
-                  title="أضف إلى الاختيار"
-                />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeFromRecent(item.src);
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="حذف من الأخيرة"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Sentence */}
       <div className="mt-3 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-3 text-center">

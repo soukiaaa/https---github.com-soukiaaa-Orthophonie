@@ -29,9 +29,21 @@ export function SelectionProvider({ children }) {
   }, [recentItems]);
 
   const addItem = (item) => {
-    setSelectedItems((prev) => [...prev, item]);
+    setSelectedItems((prev) => {
+      const updated = [...prev, item];
+      setSentence(updated.map((item) => item.alt).join(' '));
+      return updated;
+    });
     // Add to recent items
     addToRecent(item);
+  };
+
+  const removeSelectedItem = (index) => {
+    setSelectedItems((prev) => {
+      const updated = prev.filter((_, idx) => idx !== index);
+      setSentence(updated.map((item) => item.alt).join(' '));
+      return updated;
+    });
   };
 
   const addToRecent = (item) => {
@@ -131,6 +143,7 @@ export function SelectionProvider({ children }) {
     sentence,
     setSentence,
     addItem,
+    removeSelectedItem,
     clearSelection,
     speakSentence,
     addAudio,
