@@ -6,7 +6,7 @@ import { CgArrowLeft } from "react-icons/cg";
 import { FaUserCircle, FaSignOutAlt } from "react-icons/fa";
 
 export default function TopBar() {
-  const { selectedItems, sentence, addItem, removeSelectedItem } = useContext(SelectionContext);
+  const { selectedItems, sentence, addItem, removeSelectedItem, recentItems, removeRecentItem } = useContext(SelectionContext);
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -123,11 +123,56 @@ export default function TopBar() {
             </div>
           ))
         ) : (
-          <p className="text-gray-400 text-sm">
-            اختر الصور لإنشاء جملة
-          </p>
+          <div className="flex flex-col items-center gap-3 w-full">
+            <p className="text-gray-400 text-sm">
+              اختر الصور لإنشاء جملة
+            </p>
+          </div>
         )}
       </div>
+        {recentItems.length > 0 && (
+  <div className="w-full max-w-xl bg-purple-50 border border-purple-200 rounded-2xl p-3 shadow-sm">
+    
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-sm font-semibold text-purple-700">
+        الاختيارات الأخيرة
+      </span>
+    </div>
+
+    {/* 👇 ICI la correction */}
+    <div className="flex gap-2 overflow-x-auto">
+      {recentItems.slice(0, 5).map((item, idx) => (
+        
+        <div key={idx} className="relative flex-shrink-0">
+          
+          <button
+            type="button"
+            onClick={() => addItem(item)}
+            className="w-16 h-16 rounded-xl overflow-hidden border border-purple-200 shadow-sm hover:scale-105 transition-transform"
+            title={item.alt}
+          >
+            <img
+              src={item.src}
+              alt={item.alt}
+              className="w-full h-full object-cover"
+            />
+          </button>
+
+          <button
+            onClick={() => removeRecentItem(idx)}
+            className="absolute -top-2 -left-2 bg-white text-gray-700 rounded-full w-6 h-6 flex items-center justify-center text-xs shadow-md hover:bg-gray-100 transition-colors"
+            title="حذف العنصر"
+          >
+            ✕
+          </button>
+
+        </div>
+
+      ))}
+    </div>
+
+  </div>
+)}
 
       {/* Sentence */}
       <div className="mt-3 bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-3 text-center">

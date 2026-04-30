@@ -84,7 +84,7 @@ export default function SignUpPage() {
             إنشاء حساب جديد
           </h2>
           <p className="text-gray-500 mb-10">
-            انضم إلينا لتبدأ رحلتك التعليمية.
+            انضم السنة في عالم التواصل البديل.
           </p>
 
           {/* MESSAGE */}

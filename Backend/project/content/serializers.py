@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Theme, Subcategory
+from .models import User, Theme, Subcategory, CustomSubcategory
 from django.contrib.auth import authenticate
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -41,3 +41,10 @@ class SubcategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Subcategory
         fields = ['name', 'image', 'video', 'voice']
+
+
+class CustomSubcategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomSubcategory
+        fields = ['id', 'name', 'image', 'video', 'voice', 'created_at']
+        read_only_fields = ['id', 'created_at']

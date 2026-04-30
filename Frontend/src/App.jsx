@@ -54,7 +54,13 @@ const AppContent = () => {
   };
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/themes/`, { cache: 'no-cache' })
+    const token = localStorage.getItem('access');
+    fetch(`${API_BASE_URL}/api/themes/`, { 
+      cache: 'no-cache',
+      headers: token ? {
+        'Authorization': `Bearer ${token}`,
+      } : {}
+    })
       .then(res => res.json())
       .then(data => {
         setThemes(sortThemesByUsage(data));

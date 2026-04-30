@@ -41,14 +41,7 @@ export default function SubcategoryPage() {
       .then(res => res.json())
       .then(data => {
         setThemeName(data.name);
-
-        let allSubs = data.subcategories || [];
-        if (user && user.id) {
-          const localKey = `custom_subs_${user.id}_${themeId}`;
-          const localData = JSON.parse(localStorage.getItem(localKey) || '[]');
-          allSubs = [...allSubs, ...localData];
-        }
-        setSubcategories(allSubs);
+        setSubcategories(data.subcategories || []);
       })
       .catch(err => console.error(err));
   }, [themeId]);
@@ -104,8 +97,12 @@ export default function SubcategoryPage() {
       }
 
       // Send to backend
-      const response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/subcategories/`, {
+      const token = localStorage.getItem('access');
+      const response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/custom-subcategories/`, {
         method: 'POST',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`,
+        } : {},
         body: formData
       });
 
@@ -363,6 +360,18 @@ export default function SubcategoryPage() {
 
   const isActions = themeId === 'actions';
 
+  const playSubVoice = (sub) => {
+    if (!sub) return;
+    if (sub.voice) {
+      const audio = new Audio(resolveMediaUrl(sub.voice));
+      audio.play().catch(() => {
+        // ignore playback errors
+      });
+    } else {
+      speak(sub.name);
+    }
+  };
+
   const handleClick = (sub) => {
     addItem({ src: sub.image, alt: sub.name, voice: resolveMediaUrl(sub.voice) });
   };
@@ -415,7 +424,8 @@ export default function SubcategoryPage() {
 
               {/* Button Edit (Voice) */}
               <button
-                onClick={(e) => { e.stopPropagation(); setEditingSub(sub); setNewSubVoice(''); }}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingSub(sub); setNewSubVoice(''); }}
                 className="absolute top-2 right-2 z-10 bg-blue-100 text-blue-500 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-200"
                 title="تعديل الصوت"
               >
@@ -427,7 +437,13 @@ export default function SubcategoryPage() {
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-300 to-purple-300 blur-lg opacity-0 group-hover:opacity-40 transition-all duration-300"></div>
                 {/* Button Agrandir (Zoom) */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); setZoomedImage(sub); }}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setZoomedImage(sub);
+                    playSubVoice(sub);
+                  }}
                   className="absolute bottom-1 right-1 z-10 bg-white/90 text-purple-600 p-2 rounded-lg shadow-md md:opacity-0 md:group-hover:opacity-100 transition-all active:scale-95"
                   title="agrandir"
                 >
@@ -457,7 +473,9 @@ export default function SubcategoryPage() {
                   {sub.name}
                 </span>
                 <button
+                  type="button"
                   onClick={(e) => {
+                    e.preventDefault();
                     e.stopPropagation();
                     if (sub.voice) {
                       const audio = new Audio(resolveMediaUrl(sub.voice));

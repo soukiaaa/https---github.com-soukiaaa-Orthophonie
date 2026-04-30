@@ -10,8 +10,8 @@ from django.utils.text import slugify
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import api_view
-from .models import User, Theme, Subcategory
-from .serializers import RegisterSerializer, LoginSerializer, SubcategorySerializer
+from .models import User, Theme, Subcategory, CustomSubcategory
+from .serializers import RegisterSerializer, LoginSerializer, SubcategorySerializer, CustomSubcategorySerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -37,34 +37,6 @@ def save_generated_image(action, image_data):
     return os.path.join(folder_name, filename)
 
 
-def generate_image_from_openai(prompt):
-    api_key = os.environ.get('OPENAI_API_KEY')
-    if not api_key:
-        raise RuntimeError('OPENAI_API_KEY is not set')
-
-    request_data = json.dumps({
-        'model': 'gpt-image-1',
-        'prompt': prompt,
-        'size': '512x512',
-        'response_format': 'b64_json',
-    }).encode('utf-8')
-
-    req = urllib.request.Request(
-        'https://api.openai.com/v1/images/generations',
-        data=request_data,
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': f'Bearer {api_key}',
-        },
-    )
-
-    with urllib.request.urlopen(req) as res:
-        response_body = res.read().decode('utf-8')
-    response_json = json.loads(response_body)
-    b64_json = response_json['data'][0]['b64_json']
-    return base64.b64decode(b64_json)
-
-
 def generate_action_image(request):
     action = request.GET.get('action', '').strip()
     if not action:
@@ -86,21 +58,46 @@ def generate_action_image(request):
 def themes_list(request):
     themes = []
     for theme in Theme.objects.all():
+        # Get standard subcategories
+        standard_subs = theme.subcategories.all()
+        
+        # Get custom subcategories if user is authenticated
+        custom_subs = CustomSubcategory.objects.none()
+        if request.user.is_authenticated:
+            custom_subs = theme.custom_subcategories.filter(user=request.user)
+        
+        # Combine both
+        all_subs = []
+        
+        # Add standard subcategories
+        for sub in standard_subs:
+            all_subs.append({
+                'id': sub.slug,
+                'name': sub.name,
+                'image': get_media_url(request, sub.image),
+                'video': get_media_url(request, sub.video),
+                'voice': get_media_url(request, sub.voice),
+                'type': 'standard'
+            })
+        
+        # Add custom subcategories
+        for sub in custom_subs:
+            all_subs.append({
+                'id': sub.id,
+                'name': sub.name,
+                'image': get_media_url(request, sub.image),
+                'video': get_media_url(request, sub.video),
+                'voice': get_media_url(request, sub.voice),
+                'type': 'custom'
+            })
+        
         themes.append({
             'id': theme.slug,
             'name': theme.name,
             'image': get_media_url(request, theme.image),
-            'subcategories': [
-                {
-                    'id': sub.slug,
-                    'name': sub.name,
-                    'image': get_media_url(request, sub.image),
-                    'video': get_media_url(request, sub.video),
-                    'voice': get_media_url(request, sub.voice)
-                }
-                for sub in theme.subcategories.all()
-            ]
+            'subcategories': all_subs
         })
+    
     response = JsonResponse(themes, safe=False)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
@@ -110,20 +107,45 @@ def themes_list(request):
 def theme_detail(request, slug):
     try:
         theme = Theme.objects.get(slug=slug)
+        
+        # Get standard subcategories
+        standard_subs = theme.subcategories.all()
+        
+        # Get custom subcategories if user is authenticated
+        custom_subs = CustomSubcategory.objects.none()
+        if request.user.is_authenticated:
+            custom_subs = theme.custom_subcategories.filter(user=request.user)
+        
+        # Combine both
+        all_subs = []
+        
+        # Add standard subcategories
+        for sub in standard_subs:
+            all_subs.append({
+                'id': sub.slug,
+                'name': sub.name,
+                'image': get_media_url(request, sub.image),
+                'video': get_media_url(request, sub.video),
+                'voice': get_media_url(request, sub.voice),
+                'type': 'standard'
+            })
+        
+        # Add custom subcategories
+        for sub in custom_subs:
+            all_subs.append({
+                'id': sub.id,
+                'name': sub.name,
+                'image': get_media_url(request, sub.image),
+                'video': get_media_url(request, sub.video),
+                'voice': get_media_url(request, sub.voice),
+                'type': 'custom'
+            })
+        
         data = {
             'id': theme.slug,
             'name': theme.name,
             'image': get_media_url(request, theme.image),
-            'subcategories': [
-                {
-                    'id': sub.slug,
-                    'name': sub.name,
-                    'image': get_media_url(request, sub.image),
-                    'video': get_media_url(request, sub.video),
-                    'voice': get_media_url(request, sub.voice)
-                }
-                for sub in theme.subcategories.all()
-            ]
+            'subcategories': all_subs
         }
         response = JsonResponse(data)
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -246,6 +268,32 @@ class SubcategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = SubcategorySerializer
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+
+
+class CreateCustomSubcategoryView(generics.CreateAPIView):
+    queryset = CustomSubcategory.objects.all()
+    serializer_class = CustomSubcategorySerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def perform_create(self, serializer):
+        theme_slug = self.kwargs.get('theme_slug')
+        try:
+            theme = Theme.objects.get(slug=theme_slug)
+        except Theme.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound('Theme not found')
+        
+        serializer.save(theme=theme, user=self.request.user)
+
+
+class CustomSubcategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = CustomSubcategorySerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        return CustomSubcategory.objects.filter(user=self.request.user)
 
 
 @csrf_exempt

@@ -46,6 +46,14 @@ export function SelectionProvider({ children }) {
     });
   };
 
+  const removeRecentItem = (index) => {
+    setRecentItems((prev) =>{
+      const updated = prev.filter((_, idx) => idx !== index);
+      setSentence(updated.map((item) => item.alt).join(' '));
+      return updated;
+    });
+  };
+
   const addToRecent = (item) => {
     // Avoid duplicates by checking if item already exists in recent
     setRecentItems((prev) => {
@@ -151,6 +159,7 @@ export function SelectionProvider({ children }) {
     recentItems,
     addToRecent,
     removeFromRecent,
+    removeRecentItem,
   };
 
   return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;
