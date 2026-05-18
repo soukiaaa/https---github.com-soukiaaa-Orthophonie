@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Theme, Subcategory, CustomSubcategory
+from .models import User, Theme, Subcategory
 from django.contrib.auth import authenticate
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -38,13 +38,15 @@ class LoginSerializer(serializers.Serializer):
 
 
 class SubcategorySerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source='slug', read_only=True)
+    hidden = serializers.SerializerMethodField()
+
     class Meta:
         model = Subcategory
-        fields = ['name', 'image', 'video', 'voice']
+        fields = ['id', 'name', 'image', 'video', 'voice', 'hidden']
 
-
-class CustomSubcategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomSubcategory
-        fields = ['id', 'name', 'image', 'video', 'voice', 'created_at']
-        read_only_fields = ['id', 'created_at']
+    def get_hidden(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.hidden_by.filter(pk=request.user.pk).exists()

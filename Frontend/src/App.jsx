@@ -10,6 +10,7 @@ import BottomBar from './components/BottomBar';
 import { useState, useEffect } from 'react';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
+import HiddenSubcategoryPage from './pages/HiddenSubcategoryPage';
 import logo from './assets/images/logo.jfif';
 import SplashPage from './pages/SplashPage';
 import { API_BASE_URL } from './config';
@@ -27,7 +28,6 @@ const AppContent = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const [themes, setThemes] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const showBars = location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/signup';
@@ -53,25 +53,58 @@ const AppContent = () => {
     });
   };
 
+  const refreshToken = async () => {
+    const refresh = localStorage.getItem('refresh');
+    if (!refresh) throw new Error('No refresh token');
+    const response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh })
+    });
+    if (!response.ok) throw new Error('Refresh failed');
+    const data = await response.json();
+    localStorage.setItem('access', data.access);
+    return data.access;
+  };
+
   useEffect(() => {
-    const token = localStorage.getItem('access');
-    fetch(`${API_BASE_URL}/api/themes/`, { 
-      cache: 'no-cache',
-      headers: token ? {
-        'Authorization': `Bearer ${token}`,
-      } : {}
-    })
-      .then(res => res.json())
-      .then(data => {
-        setThemes(sortThemesByUsage(data));
-        setSubcategories(data.subcategories);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to load themes:', error);
-        setError('Failed to load themes. Please try again later.');
-        setLoading(false);
+    const fetchThemes = async () => {
+      let token = localStorage.getItem('access');
+      let response = await fetch(`${API_BASE_URL}/api/themes/`, {
+        cache: 'no-cache',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
+
+      if (response.status === 401 && token) {
+        try {
+          token = await refreshToken();
+          response = await fetch(`${API_BASE_URL}/api/themes/`, {
+            cache: 'no-cache',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } catch (refreshError) {
+          console.warn('Theme load token refresh failed:', refreshError);
+          response = await fetch(`${API_BASE_URL}/api/themes/`, {
+            cache: 'no-cache'
+          });
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to load themes: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const themesData = Array.isArray(data) ? data : [];
+      setThemes(sortThemesByUsage(themesData));
+      setLoading(false);
+    };
+
+    fetchThemes().catch(error => {
+      console.error('Failed to load themes:', error);
+      setError('Failed to load themes. Please try again later.');
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
@@ -116,13 +149,18 @@ const AppContent = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50" dir="rtl" lang="ar">
       {showBars && <TopBar />}
-      <div className={showBars ? 'pb-32' : ''}>
+      <div className={showBars ? 'pb-28' : ''}>
         <Routes>
           <Route path="/" element={<SplashPage />} />
           <Route path="/home" element={<ThemeGrid themes={themes} />} />
           <Route path="/theme/:id" element={
             <ProtectedRoute>
               <SubcategoryPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/theme/:id/hidden" element={
+            <ProtectedRoute>
+              <HiddenSubcategoryPage />
             </ProtectedRoute>
           } />
           <Route path="/login" element={<LoginPage />} />

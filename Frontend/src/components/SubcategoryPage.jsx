@@ -1,10 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SelectionContext } from '../context/SelectionContext';
 import { API_BASE_URL } from '../config';
 import useSpeech from '../hook/useSpaach';
-import { FaPlus, FaTimes, FaImage, FaTrash, FaMicrophone, FaUpload, FaVideo, FaSearchPlus, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaTimes, FaEye, FaImage, FaTrash, FaMicrophone, FaUpload, FaVideo, FaSearchPlus, FaEdit } from 'react-icons/fa';
 
 export default function SubcategoryPage() {
   const { t } = useTranslation();
@@ -29,21 +29,106 @@ export default function SubcategoryPage() {
   const [editingSub, setEditingSub] = useState(null);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAuthenticated = !!localStorage.getItem('access');
+  const navigate = useNavigate();
+  const visibleSubcategories = subcategories.filter(sub => !sub.hidden);
+  const hiddenSubcategories = subcategories.filter(sub => sub.hidden);
+
+  const handleToggleHidden = async (e, sub) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      alert('Veuillez vous connecter pour modifier la visibilité de cet élément.');
+      return;
+    }
+
+    let token = localStorage.getItem('access');
+    if (!token) {
+      alert('Veuillez vous connecter.');
+      return;
+    }
+
+    try {
+      let response = await fetch(`${API_BASE_URL}/api/subcategories/${sub.id}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ hidden: !sub.hidden }),
+      });
+
+      if (response.status === 401) {
+        try {
+          token = await refreshToken();
+          response = await fetch(`${API_BASE_URL}/api/subcategories/${sub.id}/`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ hidden: !sub.hidden }),
+          });
+        } catch {
+          alert('Session expirée. Veuillez vous reconnecter.');
+          return;
+        }
+      }
+
+      if (!response.ok) {
+        throw new Error('Impossible de modifier la visibilité.');
+      }
+
+      const updatedSub = await response.json();
+      setSubcategories(prev => prev.map(item => item.id === sub.id ? { ...item, hidden: updatedSub.hidden } : item));
+    } catch (error) {
+      console.error('Error toggling hidden state:', error);
+      alert('حدث خطأ أثناء تغيير حالة العرض');
+    }
+  };
+
+  const refreshToken = async () => {
+    const refresh = localStorage.getItem('refresh');
+    if (!refresh) throw new Error('No refresh token');
+    const response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh })
+    });
+    if (!response.ok) throw new Error('Refresh failed');
+    const data = await response.json();
+    localStorage.setItem('access', data.access);
+    return data.access;
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem('access');
+    const fetchTheme = async () => {
+      let token = localStorage.getItem('access');
+      let response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/`, {
+        headers: token ? {
+          'Authorization': `Bearer ${token}`,
+        } : {}
+      });
 
-    fetch(`${API_BASE_URL}/api/themes/${themeId}/`, {
-      headers: token ? {
-        'Authorization': `Bearer ${token}`,
-      } : {}
-    })
-      .then(res => res.json())
-      .then(data => {
-        setThemeName(data.name);
-        setSubcategories(data.subcategories || []);
-      })
-      .catch(err => console.error(err));
+      if (response.status === 401 && token) {
+        try {
+          token = await refreshToken();
+          response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            }
+          });
+        } catch (refreshError) {
+          // If refresh fails, fetch without token
+          response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/`);
+        }
+      }
+
+      const data = await response.json();
+      setThemeName(data.name);
+      setSubcategories(data.subcategories || []);
+    };
+
+    fetchTheme();
   }, [themeId]);
 
   const handleAddSubcategory = async () => {
@@ -97,14 +182,31 @@ export default function SubcategoryPage() {
       }
 
       // Send to backend
-      const token = localStorage.getItem('access');
-      const response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/custom-subcategories/`, {
+      let token = localStorage.getItem('access');
+      let response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/subcategories/`, {
         method: 'POST',
         headers: token ? {
           'Authorization': `Bearer ${token}`,
         } : {},
         body: formData
       });
+
+      if (response.status === 401) {
+        try {
+          token = await refreshToken();
+          response = await fetch(`${API_BASE_URL}/api/themes/${themeId}/subcategories/`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+            body: formData
+          });
+        } catch (refreshError) {
+          alert('Session expired. Please log in again.');
+          // Optionally redirect to login
+          return;
+        }
+      }
 
       if (!response.ok) {
         throw new Error('Failed to create subcategory');
@@ -321,8 +423,8 @@ export default function SubcategoryPage() {
       if (typeof editingSub.id === 'number' && editingSub.id > 1000000000000) {
         console.log("Mise à jour locale uniquement (élément non synchronisé)");
       } else {
-        const token = localStorage.getItem('access');
-        const response = await fetch(`${API_BASE_URL}/api/subcategories/${editingSub.id}/`, {
+        let token = localStorage.getItem('access');
+        let response = await fetch(`${API_BASE_URL}/api/subcategories/${editingSub.id}/`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${token}`
@@ -330,11 +432,27 @@ export default function SubcategoryPage() {
           body: formData
         });
 
-      if (!response.ok) {
-        throw new Error('Failed to update voice');
-      }
+        if (response.status === 401) {
+          try {
+            token = await refreshToken();
+            response = await fetch(`${API_BASE_URL}/api/subcategories/${editingSub.id}/`, {
+              method: 'PATCH',
+              headers: {
+                Authorization: `Bearer ${token}`
+              },
+              body: formData
+            });
+          } catch (refreshError) {
+            alert('Session expired. Please log in again.');
+            return;
+          }
+        }
 
-      const updatedSub = await response.json();
+        if (!response.ok) {
+          throw new Error('Failed to update voice');
+        }
+
+        const updatedSub = await response.json();
         
         finalVoiceUrl = updatedSub.voice;
       }
@@ -377,7 +495,7 @@ export default function SubcategoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 pt-6 pb-32 px-4" dir="rtl" lang="ar">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-purple-50 pt-6 pb-72 px-4" dir="rtl" lang="ar">
       <div className="w-full max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -386,6 +504,19 @@ export default function SubcategoryPage() {
           </h2>
           <p className="text-gray-600">اختر العنصر الذي تريده</p>
         </div>
+
+        {isAuthenticated && (
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <button
+              type="button"
+              onClick={() => navigate('hidden')}
+              className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-3 rounded-2xl transition-shadow shadow-md"
+            >
+              <FaEye size={16} />
+              العناصر المخفية{hiddenSubcategories.length > 0 ? ` (${hiddenSubcategories.length})` : ''}
+            </button>
+          </div>
+        )}
 
         {/* Grid */}
         <div className="w-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 gap-6 justify-items-center">
@@ -401,7 +532,7 @@ export default function SubcategoryPage() {
             <span className="text-sm font-bold text-gray-500 group-hover:text-purple-600">إضافة جديد</span>
           </div>
 
-          {subcategories.map((sub, idx) => (
+          {visibleSubcategories.map((sub, idx) => (
             <div
               key={sub.id}
               onClick={() => handleClick(sub)}
@@ -409,8 +540,13 @@ export default function SubcategoryPage() {
                 animation: `scaleIn 0.4s ease-out ${idx * 80}ms forwards`,
                 opacity: 0,
               }}
-              className={`group flex flex-col items-center bg-white rounded-2xl p-4 hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-3 cursor-pointer border-2 border-transparent hover:border-purple-300 active:scale-95 ${isActions ? 'action-card' : ''}`}
+              className={`relative group flex flex-col items-center bg-white rounded-2xl p-4 hover:shadow-2xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-3 cursor-pointer border-2 border-transparent hover:border-purple-300 active:scale-95 ${isActions ? 'action-card' : ''}`}
             >
+              {sub.hidden && (
+                <span className="absolute bottom-3 left-3 z-10 bg-yellow-100 text-yellow-800 text-[10px] font-semibold uppercase px-2 py-1 rounded-full">
+                  مخفي
+                </span>
+              )}
               {/* Delete Button for Custom Items */}
               {sub.isCustom && (
                 <button
@@ -468,32 +604,45 @@ export default function SubcategoryPage() {
               </div>
 
               {/* Name + Voice */}
-              <div className="flex items-center justify-between w-full">
-                <span className="text-sm font-bold text-gray-800 text-center group-hover:text-purple-600 transition-colors duration-300">
-                  {sub.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (sub.voice) {
-                      const audio = new Audio(resolveMediaUrl(sub.voice));
-                      audio.play();
-                    } else {
-                      speak(sub.name);
-                    }
-                  }}
-                  disabled={isSpeaking}
-                  className="p-1 text-blue-500 hover:text-blue-700 disabled:opacity-50 transition-colors"
-                  title="استمع"
-                >
-                  🔊
-                </button>
+              <div className="flex flex-col gap-2 w-full">
+                <div className="flex items-center justify-between w-full">
+                  <span className="text-sm font-bold text-gray-800 text-center group-hover:text-purple-600 transition-colors duration-300">
+                    {sub.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (sub.voice) {
+                        const audio = new Audio(resolveMediaUrl(sub.voice));
+                        audio.play();
+                      } else {
+                        speak(sub.name);
+                      }
+                    }}
+                    disabled={isSpeaking}
+                    className="p-1 text-blue-500 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                    title="استمع"
+                  >
+                    🔊
+                  </button>
+                </div>
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleToggleHidden(e, sub); }}
+                    className={`text-xs font-semibold rounded-full px-2 py-1 transition ${sub.hidden ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                    title={sub.hidden ? 'Démasquer' : 'Masquer'}
+                  >
+                    {sub.hidden ? 'إظهار' : 'إخفاء'}
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
+        <div className="h-28 md:h-32" aria-hidden="true" />
       </div>
 
       {/* Add Modal */}

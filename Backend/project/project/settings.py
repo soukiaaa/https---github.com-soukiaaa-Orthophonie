@@ -15,7 +15,7 @@ DEBUG = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ['10.0.24.23', 'localhost', '127.0.0.1', '10.0.19.2']
+ALLOWED_HOSTS = ['10.0.24.23', 'localhost', '127.0.0.1', '10.0.19.6']
 
 # Application definition
 
@@ -123,6 +123,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5174",
     "http://127.0.0.1:5174",
     "http://10.0.19.2:5173",
+    "http://10.0.19.6:5173",
     # Development - HTTPS (for microphone recording on other networks)
     "https://localhost:5173",
     "https://127.0.0.1:5173",

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -16,27 +17,14 @@ class Subcategory(models.Model):
     image = models.ImageField(blank=True, upload_to='subcategories/')
     video = models.FileField(blank=True, upload_to='subcategories/videos/')
     voice = models.FileField(blank=True, upload_to='subcategories/voices/')
+    hidden_by = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='hidden_subcategories')
+    hidden = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('theme', 'slug')
 
     def __str__(self):
         return f"{self.theme.name} - {self.name}"
-
-class CustomSubcategory(models.Model):
-    theme = models.ForeignKey(Theme, related_name='custom_subcategories', on_delete=models.CASCADE)
-    user = models.ForeignKey('User', related_name='custom_subcategories', on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
-    image = models.ImageField(blank=True, upload_to='custom_subcategories/')
-    video = models.FileField(blank=True, upload_to='custom_subcategories/videos/')
-    voice = models.FileField(blank=True, upload_to='custom_subcategories/voices/')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.theme.name} - {self.name} (by {self.user.email})"
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
