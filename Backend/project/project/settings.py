@@ -15,7 +15,7 @@ DEBUG = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ['10.0.24.23', 'localhost', '127.0.0.1', '10.0.19.6']
+ALLOWED_HOSTS = ['10.0.24.23', 'localhost', '127.0.0.1', '10.0.19.6', "orthophonie-backend.onrender.com"]
 
 # Application definition
 
@@ -46,6 +46,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'project.urls'
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://orthophonie-backend.onrender.com"
+]
 
 TEMPLATES = [
     {
