@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'https://elamal-orthophonie.com.ilm-edu.com';
+const DEFAULT_API_BASE_URL = 'https://orthophonie-backend.onrender.com';
 // http://127.0.0.1:8000
 // https://elamal-orthophonie.com.ilm-edu.com
 
